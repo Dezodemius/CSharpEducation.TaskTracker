@@ -15,9 +15,7 @@ namespace Main
 {
   internal class Program 
   {
-    //public Program() { }
-    //private static List<Task> AllTask;
-    //private static List<Task> MyTask;
+
     static void Main(string[] args)
     {
       Host OTask_Manager_bot = new Host();
@@ -25,11 +23,6 @@ namespace Main
       //OTask_Manager_bot.OnMessage += OnMessage;
       Console.ReadLine();
     }
-    
-    //private static async void OnMessage(ITelegramBotClient client, Update update)
-    //{
-
-    //}
   }
 }
 
