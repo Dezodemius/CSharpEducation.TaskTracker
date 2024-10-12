@@ -16,26 +16,17 @@ using NLog;
 
 namespace Main
 {
-    internal class Program
+  internal class Program 
+  {
+
+    static void Main(string[] args)
     {
-        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-        //public Program() { }
-        //private static List<Task> AllTask;
-        //private static List<Task> MyTask;
-        static void Main(string[] args)
-        {
-            logger.Info("Приложение запущено");
-            Host OTask_Manager_bot = new Host();
-            OTask_Manager_bot.Start();
-            ////OTask_Manager_bot.OnMessage += OnMessage;
-            Console.ReadLine();
-        }
-
-        //private static async void OnMessage(ITelegramBotClient client, Update update)
-        //{
-
-        //}
+      Host OTask_Manager_bot = new Host();
+      OTask_Manager_bot.Start();
+      //OTask_Manager_bot.OnMessage += OnMessage;
+      Console.ReadLine();
     }
+  }
 }
 
 

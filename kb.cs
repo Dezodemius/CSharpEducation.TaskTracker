@@ -28,7 +28,7 @@ namespace Main
     /// </summary>
     /// <param name="tasksArray"></param>
     /// <returns></returns>
-    public static InlineKeyboardButton[][] GetInlineKeyboard(Tasks[] tasksArray)
+    public static InlineKeyboardButton[][] GetInlineKeyboard(Main.Copy.Task[] tasksArray)
     {
       var keyboardInline = new InlineKeyboardButton[tasksArray.Length][];
       var keyboardButtons = new InlineKeyboardButton[tasksArray.Length];
