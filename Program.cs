@@ -10,6 +10,7 @@ using static System.Net.Mime.MediaTypeNames;
 using System.Configuration;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
+using Main.DataBase;
 
 namespace Main
 {
@@ -23,6 +24,7 @@ namespace Main
       //OTask_Manager_bot.OnMessage += OnMessage;
       Console.ReadLine();
     }
+    
   }
 }
 
