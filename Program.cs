@@ -16,17 +16,19 @@ using NLog;
 
 namespace Main
 {
-  internal class Program 
-  {
-
-    static void Main(string[] args)
+    internal class Program
     {
-      Host OTask_Manager_bot = new Host();
-      OTask_Manager_bot.Start();
-      //OTask_Manager_bot.OnMessage += OnMessage;
-      Console.ReadLine();
+        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+        static void Main(string[] args)
+        {
+            logger.Info("Запуск приложения...");
+            Host OTask_Manager_bot = new Host();
+            OTask_Manager_bot.Start();
+            //OTask_Manager_bot.OnMessage += OnMessage;
+            logger.Info("Бот запущен и ожидает обновлений.");
+            Console.ReadLine();
+        }
     }
-  }
 }
 
 
