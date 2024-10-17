@@ -7,20 +7,20 @@ using System.Xml.Linq;
 
 namespace Main.Copy
 {
-  public class Tasks : IEntity<Guid>
+  public class Task : IEntity<Guid>
   {
     public Guid Id { get; set; }
 
-    public string Description { get; set; }
+    public string? Description { get; set; }
 
     public DateTime StartDate { get; set; } = DateTime.Now;
 
     public DateTime EndDate { get; set; }
 
-    public string AppUserId { get; set; }
+    public string? AppUserId { get; set; }
 
-    public IEnumerable<Comment> Comments { get; set; }
+    //public IEnumerable<Comment>? Comments { get; set; }
 
-    public IEnumerable<Responsible> Responsibles { get; set; }
+    //public IEnumerable<Responsible>? Responsibles { get; set; }
   }
 }

@@ -12,6 +12,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 using System.ComponentModel;
 using Main.Copy;
 using Telegram.Bot.Types.Enums;
+using Main.DataBase;
 using NLog;
 
 
@@ -23,11 +24,11 @@ namespace Main
         public Action<ITelegramBotClient, Update> OnMessage;
         private TelegramBotClient Task_bot;
         private bool AllTasksFlag = false;
-        Tasks[] AllTasks;
-        Tasks[] MyTasks;
+        Main.Copy.Task[] AllTasks;
+        Main.Copy.Task[] MyTasks;
         public Host()
         {
-      Task_bot = new TelegramBotClient("7416815072:AAGlhMnfVjHh8s4L2k63cXIEt7OTAA4if9Q");
+            Task_bot = new TelegramBotClient("7940487255:AAGToj4yup9tZ61PUc7o-RNpc02nDNtIhuA");
         }
 
         public void Start()
@@ -38,16 +39,24 @@ namespace Main
         }
 
 
-        private async Task UpdateHandler(ITelegramBotClient client, Update update, CancellationToken cancellationToken)
+        /// <summary>
+        /// Метод закоментирован потому что не работает.
+        /// Кто-нибудь почините.
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="update"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        private async System.Threading.Tasks.Task UpdateHandler(ITelegramBotClient client, Update update, CancellationToken cancellationToken)
         {
-            logger.Info("Начало обработки обновления: {UpdateId}, тип: {UpdateType}", update.Id, update.Type);
             try
             {
+
+
                 if (update.Type == UpdateType.Message)
                 {
                     string Time = DateTime.Now.ToShortTimeString();
                     var message = update.Message;
-                    logger.Info("Получено сообщение от пользователя {UserId}: {MessageText}", message.Chat.Id, message.Text);
                     if (message.Text.ToLower() == "/menu")
                     {
                         await Task_bot.SendTextMessageAsync(
@@ -111,16 +120,16 @@ namespace Main
                     else if (int.TryParse(callbackQuery.Data, out int AllTasksResult) && AllTasksFlag && AllTasks != null)
                     {
                         await Task_bot.SendTextMessageAsync(
-                        chatId: update.Message.Chat.Id,
-                        text: $"\nId: - {AllTasks[AllTasksResult].Id}\nDescription: - {AllTasks[AllTasksResult].Description}\nStartDate: - {AllTasks[AllTasksResult].StartDate}\nEndDate: - {AllTasks[AllTasksResult].EndDate}\nAppUserId: - {AllTasks[AllTasksResult].AppUserId}\nComments: - {AllTasks[AllTasksResult].Comments}\nResponsibles: -{AllTasks[AllTasksResult].Responsibles}\n",
+                        chatId: callbackQuery.Message.Chat.Id,
+                        text: $"\nId: - {AllTasks[AllTasksResult].Id}\nDescription: - {AllTasks[AllTasksResult].Description}\nStartDate: - {AllTasks[AllTasksResult].StartDate}\nEndDate: - {AllTasks[AllTasksResult].EndDate}\nAppUserId: - {AllTasks[AllTasksResult].AppUserId}\n",
                         cancellationToken: cancellationToken);
                         //await SendStartMessage(message.Chat.Id, cancellationToken);
                     }
                     else if (int.TryParse(callbackQuery.Data, out int MyTasksResult) && !AllTasksFlag && MyTasks != null)
                     {
                         await Task_bot.SendTextMessageAsync(
-                        chatId: update.Message.Chat.Id,
-                        text: $"\nId: - {MyTasks[AllTasksResult].Id}\nDescription: - {MyTasks[AllTasksResult].Description}\nStartDate: - {MyTasks[AllTasksResult].StartDate}\nEndDate: - {MyTasks[AllTasksResult].EndDate}\nAppUserId: - {MyTasks[AllTasksResult].AppUserId}\nComments: - {MyTasks[AllTasksResult].Comments}\nResponsibles: -{MyTasks[AllTasksResult].Responsibles}\n",
+                        chatId: callbackQuery.Message.Chat.Id,
+                        text: $"\nId: - {MyTasks[MyTasksResult].Id}\nDescription: - {MyTasks[MyTasksResult].Description}\nStartDate: - {MyTasks[MyTasksResult].StartDate}\nEndDate: - {MyTasks[MyTasksResult].EndDate}\nAppUserId: - {MyTasks[MyTasksResult].AppUserId}\n",
                         cancellationToken: cancellationToken);
                     }
                     //var hadler = update switch
@@ -133,15 +142,11 @@ namespace Main
                     //await hadler;
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) 
             {
-                logger.Error(ex, "Ошибка с методом update");
-            }
-            finally
-            {
-                logger.Info("Завершение обработки обновления: {UpdateId}", update.Id);
-            }
+                logger.Error($"Ошибка с update методом", ex);
 
+            }
         }
 
         /// <summary>
@@ -150,8 +155,9 @@ namespace Main
         /// <param name="chatId"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task SendStartMessage(long chatId, CancellationToken cancellationToken)
+        private async System.Threading.Tasks.Task SendStartMessage(long chatId, CancellationToken cancellationToken)
         {
+            logger.Info($"Отправка начального сообщения пользователю с chatId: {chatId}");
             await Task_bot.SendTextMessageAsync(
               chatId: chatId,
               text: "Выбери опцию",
@@ -165,8 +171,9 @@ namespace Main
         /// <param name="query"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        private async Task SendAllTaskMessage(CallbackQuery query, CancellationToken cancellationToken)
+        private async System.Threading.Tasks.Task SendAllTaskMessage(CallbackQuery query, CancellationToken cancellationToken)
         {
+            logger.Info($"Отправка всех задач пользователю с chatId: {query.Message.Chat.Id}");
             InlineKeyboardMarkup inlineKeyboardMarkup;
             AllTasks = ApplicationContext.GetAllTask();
 
@@ -178,8 +185,9 @@ namespace Main
               replyMarkup: inline,
               cancellationToken: cancellationToken);
         }
-        private async Task SendMyTaskMessage(CallbackQuery query, CancellationToken cancellationToken)
+        private async System.Threading.Tasks.Task SendMyTaskMessage(CallbackQuery query, CancellationToken cancellationToken)
         {
+            logger.Info($"Отправка моих задач пользователю с chatId: {query.Message.Chat.Id}");
             InlineKeyboardMarkup inlineKeyboardMarkup;
             MyTasks = ApplicationContext.GetMyTask();
 
@@ -205,18 +213,11 @@ namespace Main
         /// <param name="exception"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        private async Task ErrorHandler(ITelegramBotClient client, Exception exception, CancellationToken token)
+        private async System.Threading.Tasks.Task ErrorHandler(ITelegramBotClient client, Exception exception, CancellationToken token)
         {
-            logger.Error(exception, "Произошла ошибка во время обработки обновления. Сообщение: {Message}", exception.Message);
-
-            if (client != null)
-            {
-                logger.Info("Идентификатор бота: {BotId}", client.BotId);
-            }
-
+            logger.Error($"Ошибка: {exception.Message}");
             Console.WriteLine("Ошибка: " + exception.Message);
-
-            await Task.CompletedTask;
+            await System.Threading.Tasks.Task.CompletedTask;
         }
     }
 }

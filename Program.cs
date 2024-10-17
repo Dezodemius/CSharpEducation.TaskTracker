@@ -19,22 +19,15 @@ namespace Main
     internal class Program
     {
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-        //public Program() { }
-        //private static List<Task> AllTask;
-        //private static List<Task> MyTask;
         static void Main(string[] args)
         {
-            logger.Info("Приложение запущено");
+            logger.Info("Запуск приложения...");
             Host OTask_Manager_bot = new Host();
             OTask_Manager_bot.Start();
-            ////OTask_Manager_bot.OnMessage += OnMessage;
+            //OTask_Manager_bot.OnMessage += OnMessage;
+            logger.Info("Бот запущен и ожидает обновлений.");
             Console.ReadLine();
         }
-
-        //private static async void OnMessage(ITelegramBotClient client, Update update)
-        //{
-
-        //}
     }
 }
 
