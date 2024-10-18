@@ -10,6 +10,7 @@ using static System.Net.Mime.MediaTypeNames;
 using System.Configuration;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
+using Main.DataBase;
 using Microsoft.Extensions.Logging;
 using NLog;
 
