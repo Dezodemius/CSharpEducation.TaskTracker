@@ -21,11 +21,13 @@ namespace Main
     internal class Host
     {
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+        private Dictionary<long, bool> waitingForTaskDescription = new Dictionary<long, bool>();
         public Action<ITelegramBotClient, Update> OnMessage;
         private TelegramBotClient Task_bot;
         private bool AllTasksFlag = false;
-        Main.Copy.Task[] AllTasks;
-        Main.Copy.Task[] MyTasks;
+        //private List<Main.Copy.Task> MyTask;
+        private List<Main.Copy.Task> AllTasks;
+        private List<Main.Copy.Task> MyTasks;
         public Host()
         {
             Task_bot = new TelegramBotClient("7940487255:AAGToj4yup9tZ61PUc7o-RNpc02nDNtIhuA");
@@ -35,9 +37,7 @@ namespace Main
         {
             logger.Info("Старт приложения");
             Task_bot.StartReceiving(UpdateHandler, ErrorHandler);
-            Console.WriteLine("Бот запущен");
         }
-
 
         /// <summary>
         /// Метод закоментирован потому что не работает.
@@ -51,12 +51,47 @@ namespace Main
         {
             try
             {
-
-
                 if (update.Type == UpdateType.Message)
                 {
-                    string Time = DateTime.Now.ToShortTimeString();
+                    //string Time = DateTime.Now.ToShortTimeString();
                     var message = update.Message;
+
+                    if (waitingForTaskDescription.ContainsKey(message.Chat.Id))
+                    {
+                        string description = message.Text;
+
+                        logger.Info($"Получено описание задачи: {description}");
+
+                        // Проверка на пустое описание
+                        if (string.IsNullOrWhiteSpace(description))
+                        {
+                            await Task_bot.SendTextMessageAsync(
+                                chatId: message.Chat.Id,
+                                text: "Описание задачи не может быть пустым. Пожалуйста, введите описание задачи.");
+                            return;
+                        }
+
+                        // Создайте новый объект задачи
+                        var newTask = new Main.Copy.Task
+                        {
+                            Description = description ?? throw new ArgumentNullException(nameof(description)),
+                            StartDate = DateTime.Now.ToUniversalTime(),
+                            EndDate = DateTime.Now.AddDays(1).ToUniversalTime(), // Задача заканчивается через день
+                            AppUserId = message.Chat.Id.ToString() // Приведение к строке, если необходимо
+                        };
+
+                        logger.Info("Создание новой задачи в базе данных");
+                        DataBaseMethods.getInstance().CreateTask(newTask);
+
+                        await Task_bot.SendTextMessageAsync(
+                            chatId: message.Chat.Id,
+                            text: "Задача добавлена!");
+
+                        // Удалите пользователя из состояния ожидания
+                        // Выход из метода, если задача была добавлена
+                        waitingForTaskDescription.Remove(message.Chat.Id);
+                        return;
+                    }
                     if (message.Text.ToLower() == "/menu")
                     {
                         await Task_bot.SendTextMessageAsync(
@@ -71,6 +106,11 @@ namespace Main
                         chatId: message.Chat,
                         text: "А я все думал когда же ты появишься ☺\nПиши /menu <- или тыкни сюда",
                         replyMarkup: kb.Menu);
+                        return;
+                    }
+                    else if (message.Text.ToLower() == "/newtask")
+                    {
+                        await StartWaitingForTaskDescription(message.Chat.Id);
                         return;
                     }
                     else if (message.Text.ToLower() == "/help")
@@ -89,41 +129,33 @@ namespace Main
                         cancellationToken: cancellationToken);
                         await SendStartMessage(message.Chat.Id, cancellationToken);
                     }
-                    //if (!message.Text.StartsWith("/"))
-                    //{
 
-                    //}
                 }
                 if (update.Type == UpdateType.CallbackQuery)
                 {
-                    // Тут идет обработка всех нажатий на кнопки, тут никаких особых доп условий не надо, тк у каждой кнопки своя ссылка
+                    //Обработка кнопок.
                     var callbackQuery = update.CallbackQuery;
-                    //var userRole = await DataBaseMethods.GetUserRole(callbackQuery.Message.Chat.Id);
-                    //long userTgId;
-                    //try
-                    //{
-                    //  userTgId = Convert.ToInt64(callbackQuery.Data);
-                    //}
-                    //catch
-                    //{
-                    //  userTgId = 0;
-                    //}
-                    //var checkUserCallback = await DataBaseMethods.GetUserRole(userTgId);
+
                     if (callbackQuery.Data == "AllTask")
                     {
-                        SendAllTaskMessage(update.CallbackQuery, cancellationToken);
+                        await SendAllTaskMessage(callbackQuery, cancellationToken);
                     }
-                    else if (callbackQuery.Data == "MyTask")
+                    if (callbackQuery.Data == "MyTask")
                     {
-                        SendMyTaskMessage(update.CallbackQuery, cancellationToken);
+                        await SendMyTaskMessage(callbackQuery, cancellationToken);
                     }
+                    if (callbackQuery.Data == "CreateTask")
+                    {
+                        await StartWaitingForTaskDescription(callbackQuery.Message.Chat.Id); // Запускаем ожидание описания задачи
+                        return;
+                    }
+
                     else if (int.TryParse(callbackQuery.Data, out int AllTasksResult) && AllTasksFlag && AllTasks != null)
                     {
                         await Task_bot.SendTextMessageAsync(
                         chatId: callbackQuery.Message.Chat.Id,
                         text: $"\nId: - {AllTasks[AllTasksResult].Id}\nDescription: - {AllTasks[AllTasksResult].Description}\nStartDate: - {AllTasks[AllTasksResult].StartDate}\nEndDate: - {AllTasks[AllTasksResult].EndDate}\nAppUserId: - {AllTasks[AllTasksResult].AppUserId}\n",
                         cancellationToken: cancellationToken);
-                        //await SendStartMessage(message.Chat.Id, cancellationToken);
                     }
                     else if (int.TryParse(callbackQuery.Data, out int MyTasksResult) && !AllTasksFlag && MyTasks != null)
                     {
@@ -132,20 +164,11 @@ namespace Main
                         text: $"\nId: - {MyTasks[MyTasksResult].Id}\nDescription: - {MyTasks[MyTasksResult].Description}\nStartDate: - {MyTasks[MyTasksResult].StartDate}\nEndDate: - {MyTasks[MyTasksResult].EndDate}\nAppUserId: - {MyTasks[MyTasksResult].AppUserId}\n",
                         cancellationToken: cancellationToken);
                     }
-                    //var hadler = update switch
-                    //{
-                    //  { Message: { } message } => MessageTextHandler(message, cancellationToken),
-                    //  { CallbackQuery: { } query } => ChoiceCallbackQueryHandler(query, cancellationToken),
-                    //  { CallbackQuery: { } query1 } => OpportunitiesTaskMessage(query1, cancellationToken),
-                    //  _ => throw new NotImplementedException()
-                    //};
-                    //await hadler;
                 }
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
-                logger.Error($"Ошибка с update методом", ex);
-
+                logger.Error($"Ошибка с update методом: {ex.Message}\n{ex.InnerException?.Message}\n{ex.StackTrace}");
             }
         }
 
@@ -174,29 +197,38 @@ namespace Main
         private async System.Threading.Tasks.Task SendAllTaskMessage(CallbackQuery query, CancellationToken cancellationToken)
         {
             logger.Info($"Отправка всех задач пользователю с chatId: {query.Message.Chat.Id}");
-            InlineKeyboardMarkup inlineKeyboardMarkup;
-            AllTasks = ApplicationContext.GetAllTask();
 
-            InlineKeyboardMarkup inline = kb.GetInlineKeyboard(AllTasks);
+            var dbMethods = DataBaseMethods.getInstance();
+            AllTasks = dbMethods.GetAllTasks();
+            if (AllTasks == null || AllTasks.Count == 0)
+            {
+                await Task_bot.SendTextMessageAsync(
+                        chatId: query.Message.Chat.Id,
+                        text: "Нет доступных задач.",
+                        cancellationToken: cancellationToken);
+            }
+
+            InlineKeyboardMarkup inline = kb.GetInlineKeyboard(AllTasks.ToArray());
 
             await Task_bot.SendTextMessageAsync(
-              chatId: query.Message.Chat.Id,
-              text: "Задачи для всех\nВыберете интересующую вас",
-              replyMarkup: inline,
-              cancellationToken: cancellationToken);
+                  chatId: query.Message.Chat.Id,
+                  text: "Задачи для всех\nВыберете интересующую вас",
+                  replyMarkup: inline,
+                  cancellationToken: cancellationToken);
         }
+
         private async System.Threading.Tasks.Task SendMyTaskMessage(CallbackQuery query, CancellationToken cancellationToken)
         {
             logger.Info($"Отправка моих задач пользователю с chatId: {query.Message.Chat.Id}");
-            InlineKeyboardMarkup inlineKeyboardMarkup;
-            MyTasks = ApplicationContext.GetMyTask();
 
-            InlineKeyboardMarkup inline = kb.GetInlineKeyboard(MyTasks);
-            //InlineKeyboardMarkup inline = new InlineKeyboardMarkup([
-            //  [InlineKeyboardButton.WithCallbackData($"Задача {0}: {tasks[0].Description}", $"TaskId{0}")],
-            //  [InlineKeyboardButton.WithCallbackData($"Задача {1}: {tasks[1].Description}", $"TaskId{1}")],
-            //  [InlineKeyboardButton.WithCallbackData($"Задача {2}: {tasks[2].Description}", $"TaskId{2}")]
-            //  ]);
+            var dbMethods = DataBaseMethods.getInstance();
+
+            // Создайте экземпляр ApplicationContext
+
+            MyTasks = dbMethods.GetMyTask(query.From.Id.ToString()).ToList(); // Передайте идентификатор пользователя
+
+
+            InlineKeyboardMarkup inline = kb.GetInlineKeyboard(MyTasks.ToArray());
 
             await Task_bot.SendTextMessageAsync(
               chatId: query.Message.Chat.Id,
@@ -205,9 +237,18 @@ namespace Main
               cancellationToken: cancellationToken);
         }
 
-
+        private async System.Threading.Tasks.Task StartWaitingForTaskDescription(long chatId)
+        {
+            if (!waitingForTaskDescription.ContainsKey(chatId))
+            {
+                waitingForTaskDescription[chatId] = true;
+                await Task_bot.SendTextMessageAsync(
+                    chatId: chatId,
+                    text: "Пожалуйста, введите описание задачи.");
+            }
+        }
         /// <summary>
-        /// Error Handler отслеживание ошибок как я понял 
+        /// Отслеживание ошибок.
         /// </summary>
         /// <param name="client"></param>
         /// <param name="exception"></param>
